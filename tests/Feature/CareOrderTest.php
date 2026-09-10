@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\CareOrder;
+use App\Models\Hospitalization;
 use App\Models\NursingNote;
 use App\Models\Patient;
 use App\Models\Service;
@@ -242,5 +243,59 @@ class CareOrderTest extends TestCase
 
         $this->assertFalse($nurse->fresh()->isOnDuty());
         $this->assertFalse($nurse->fresh()->can('execute', $order));
+    }
+
+    /**
+     * Régression : l'onglet Soins du dossier lisait les séjours en cours
+     * avec une colonne `reference` que la table hospitalizations ne porte
+     * pas — son identifiant métier est hospitalization_number.
+     *
+     * Le symptôme dépend du moteur, ce qui explique que le défaut soit
+     * passé. Sous MySQL, l'exploitation, la requête échoue et l'onglet
+     * renvoie une erreur 500 pour tout patient, même sans séjour. Sous
+     * SQLite, les tests, elle réussit : un identifiant entre guillemets
+     * doubles qui ne désigne aucune colonne y est traité comme une
+     * chaîne littérale, héritage que SQLite conserve par compatibilité.
+     * La colonne demandée revient donc avec la valeur « reference » au
+     * lieu de manquer bruyamment.
+     *
+     * C'est pourquoi le test qui protège réellement ce code est le
+     * second : il vérifie qu'un séjour ouvert est bien proposé, ce qui
+     * échoue sous les deux moteurs. Le premier ne garde que le cas le
+     * plus courant — un patient sans séjour — et ne détecterait la
+     * régression que sous MySQL.
+     */
+    public function test_l_onglet_soins_s_affiche_pour_un_patient_sans_sejour(): void
+    {
+        $this->actingAs($this->doctor())
+            ->get(route('patients.show', ['patient' => $this->patient, 'tab' => 'soins']))
+            ->assertOk();
+    }
+
+    public function test_l_onglet_soins_ne_propose_que_les_sejours_en_cours(): void
+    {
+        $open = $this->hospitalization();
+        $discharged = $this->hospitalization([
+            'discharged_at' => now()->subDay(),
+            'status' => 'discharged',
+        ]);
+
+        $response = $this->actingAs($this->doctor())
+            ->get(route('patients.show', ['patient' => $this->patient, 'tab' => 'soins']))
+            ->assertOk();
+
+        $response->assertSee($open->hospitalization_number);
+        $response->assertDontSee($discharged->hospitalization_number);
+    }
+
+    private function hospitalization(array $overrides = []): Hospitalization
+    {
+        return Hospitalization::create(array_merge([
+            'patient_id' => $this->patient->id,
+            'service_id' => $this->cardiologie->id,
+            'admitted_at' => now()->subDays(2),
+            'admission_reason' => 'Surveillance',
+            'status' => 'admitted',
+        ], $overrides));
     }
 }
