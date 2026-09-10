@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\Commands\RefreshSmsStatuses;
+use App\Console\Commands\SyncDutyPeriods;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -28,3 +29,9 @@ Schedule::command(RefreshSmsStatuses::class)
 
 // Purge des jobs en échec de plus de sept jours.
 Schedule::command('queue:prune-failed --hours=168')->daily();
+
+// Gardes planifiées à l'avance (§60) : prise et fin automatiques.
+Schedule::command(SyncDutyPeriods::class)
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

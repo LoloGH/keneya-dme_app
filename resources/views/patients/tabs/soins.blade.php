@@ -101,7 +101,7 @@
                                                     @foreach ($tabData['assignableNurses'] as $nurse)
                                                         <option value="{{ $nurse->id }}"
                                                             @selected($order->assigned_nurse_id === $nurse->id)>
-                                                            {{ $nurse->displayName() }}{{ $nurse->is_on_duty ? ' · de garde' : '' }}
+                                                            {{ $nurse->displayName() }}{{ $nurse->is_on_duty ? ' · de garde' : ($nurse->isScheduledNow() ? ' · horaire habituel' : '') }}
                                                         </option>
                                                     @endforeach
                                                 </select>
@@ -210,7 +210,7 @@
                                         @foreach ($tabData['assignableNurses'] as $nurse)
                                             <option value="{{ $nurse->id }}"
                                                 @selected(old('assigned_nurse_id') == $nurse->id)>
-                                                {{ $nurse->displayName() }}{{ $nurse->is_on_duty ? ' · de garde' : '' }}
+                                                {{ $nurse->displayName() }}{{ $nurse->is_on_duty ? ' · de garde' : ($nurse->isScheduledNow() ? ' · horaire habituel' : '') }}
                                             </option>
                                         @endforeach
                                     </select>

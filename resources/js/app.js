@@ -55,6 +55,22 @@ Alpine.data('diagnosisBuilder', (initial = []) => ({
 }));
 
 /**
+ * Gardes planifiées à l'avance pour un compte (§60) : ajout et retrait
+ * de périodes sans rechargement de page.
+ */
+Alpine.data('dutyPeriodBuilder', (initial = []) => ({
+    periods: initial,
+
+    add() {
+        this.periods.push({ starts_at: '', ends_at: '', notes: '' });
+    },
+
+    remove(index) {
+        this.periods.splice(index, 1);
+    },
+}));
+
+/**
  * Recherche globale avec anti-rebond (§58) : la frappe ne déclenche une
  * navigation qu'après une pause de saisie.
  */

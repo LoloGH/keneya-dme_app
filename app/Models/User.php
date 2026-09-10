@@ -54,6 +54,35 @@ class User extends Authenticatable
         return $this->belongsTo(Service::class);
     }
 
+    public function weeklySchedules(): HasMany
+    {
+        return $this->hasMany(UserWeeklySchedule::class);
+    }
+
+    public function dutyPeriods(): HasMany
+    {
+        return $this->hasMany(UserDutyPeriod::class);
+    }
+
+    /**
+     * Le compte est-il, d'après son horaire hebdomadaire type, censé être
+     * en poste à l'instant présent ? Purement indicatif : contrairement à
+     * is_on_duty, cet horaire ne conditionne aucun accès ni aucune
+     * visibilité — il aide seulement à repérer qui devrait être présent.
+     */
+    public function isScheduledNow(): bool
+    {
+        $today = $this->weeklySchedules->firstWhere('weekday', now()->dayOfWeekIso);
+
+        if (! $today || $today->isRestDay()) {
+            return false;
+        }
+
+        $now = now()->format('H:i:s');
+
+        return $now >= $today->starts_at && $now < $today->ends_at;
+    }
+
     /**
      * De garde : un compte désactivé ne l'est jamais, quel que soit le
      * drapeau — il n'a plus accès à l'application.
