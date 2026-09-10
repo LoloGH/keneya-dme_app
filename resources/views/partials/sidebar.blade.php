@@ -23,10 +23,10 @@
     ];
 @endphp
 
-<div class="flex h-16 items-center gap-3 border-b border-ink-200 px-5">
+<div class="flex h-20 items-center gap-3 border-b border-ink-200 px-5">
     <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
-        <img src="{{ asset('assets/logo_kdme.png') }}" alt="" class="h-9 w-9 rounded-lg object-contain">
-        <span class="text-base font-semibold tracking-tight text-ink-900">Keneya-DME</span>
+        <img src="{{ asset('assets/logo_kdme.png') }}" alt="" class="h-14 w-14 rounded-lg object-contain">
+        <span class="text-lg font-semibold tracking-tight text-ink-900">Keneya-DME</span>
     </a>
     <button type="button" class="ml-auto rounded-lg p-2 text-ink-500 hover:bg-ink-100 lg:hidden"
             @click="sidebarOpen = false" aria-label="Fermer la navigation">

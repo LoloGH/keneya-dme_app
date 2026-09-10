@@ -164,11 +164,8 @@
 
                     <div class="mt-1 flex flex-col items-center text-center">
                         <img src="{{ asset('assets/logo-icon.png') }}" alt="Keneya DME"
-                             width="320" height="270" class="h-11 w-auto object-contain [@media(max-height:820px)]:h-9">
-                        <h2 class="mt-3 text-lg font-semibold tracking-tight text-ink-900 [@media(max-height:820px)]:mt-2 [@media(max-height:820px)]:text-base">
-                            Accès sécurisé
-                        </h2>
-                        <p class="mt-0.5 text-[0.8125rem] text-ink-500">Connectez-vous pour accéder à votre espace</p>
+                             width="320" height="270" class="h-20 w-auto object-contain [@media(max-height:820px)]:h-16">
+                        <p class="mt-3 text-base font-medium text-ink-600 [@media(max-height:820px)]:mt-2">Connectez-vous pour accéder à votre espace</p>
                     </div>
 
                     @if (session('status'))
@@ -291,7 +288,7 @@
 
                     <p class="mt-5 flex items-center justify-center gap-1.5 text-center text-[11px] text-ink-400 [@media(max-height:820px)]:mt-3">
                         <x-icon name="lock" class="h-3 w-3 shrink-0"/>
-                        Vos données médicales sont protégées — accès confidentiel et contrôlé
+                        Accès sécurisé
                     </p>
 
                     <p class="mt-2.5 text-center text-[11px] text-ink-300 [@media(max-height:820px)]:mt-1.5">
