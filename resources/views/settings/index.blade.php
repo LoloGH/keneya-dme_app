@@ -16,40 +16,67 @@
 
         <section class="k-card">
             <div class="k-card-header"><h2 class="k-card-title">Établissement</h2></div>
-            <dl class="k-card-body space-y-2.5 text-sm">
+            <form action="{{ route('settings.facility.update') }}" method="POST" class="k-card-body space-y-3">
+                @csrf
+                @method('PUT')
                 @foreach ([
-                    'Nom' => $facility['name'],
-                    'Adresse' => $facility['address'],
-                    'Téléphone' => $facility['phone'],
-                    'Adresse e-mail' => $facility['email'],
-                ] as $label => $value)
-                    <div class="flex justify-between gap-4">
-                        <dt class="text-ink-500">{{ $label }}</dt>
-                        <dd class="text-right font-medium text-ink-900">{{ $value }}</dd>
+                    'name' => ['Nom', $facility['name']],
+                    'address' => ['Adresse', $facility['address']],
+                    'phone' => ['Téléphone', $facility['phone']],
+                    'email' => ['Adresse e-mail', $facility['email']],
+                ] as $field => [$label, $value])
+                    <div>
+                        <label for="facility-{{ $field }}" class="k-label">{{ $label }}</label>
+                        <input id="facility-{{ $field }}" name="{{ $field }}"
+                               type="{{ $field === 'email' ? 'email' : 'text' }}"
+                               value="{{ old($field, $value) }}" class="k-input">
+                        @error($field)
+                            <p class="k-error">{{ $message }}</p>
+                        @enderror
                     </div>
                 @endforeach
-            </dl>
+                <div class="flex justify-end pt-1">
+                    <button type="submit" class="k-btn-primary">
+                        <x-icon name="check" class="h-4 w-4"/> Enregistrer
+                    </button>
+                </div>
+            </form>
         </section>
 
         <section class="k-card">
             <div class="k-card-header"><h2 class="k-card-title">Identifiants métier</h2></div>
-            <div class="k-card-body">
+            <form action="{{ route('settings.identifiers.update') }}" method="POST" class="k-card-body">
+                @csrf
+                @method('PUT')
                 <p class="mb-3 text-sm text-ink-600">
-                    Format <span class="font-mono">PRÉFIXE-ANNÉE-SÉQUENCE</span>. Ces identifiants sont
-                    stables et jamais réattribués : ils serviront de clé de correspondance lors d’une
-                    future intégration FHIR ou HL7.
+                    Format <span class="font-mono">PRÉFIXE-ANNÉE-SÉQUENCE</span>. Changer un préfixe
+                    n’affecte que les identifiants générés ensuite : ceux déjà attribués restent
+                    inchangés, et la séquence du nouveau préfixe repart de un.
                 </p>
                 <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     @foreach ($identifiers as $key => $prefix)
                         <div class="rounded-lg border border-ink-200 px-3 py-2">
-                            <p class="text-xs text-ink-500">{{ str_replace('_', ' ', $key) }}</p>
-                            <p class="font-mono text-sm font-medium text-ink-900">
-                                {{ $prefix }}-{{ now()->format('Y') }}-000001
-                            </p>
+                            <label for="prefix-{{ $key }}" class="text-xs text-ink-500">
+                                {{ str_replace('_', ' ', $key) }}
+                            </label>
+                            <div class="mt-1 flex items-center gap-1 font-mono text-sm">
+                                <input id="prefix-{{ $key }}" name="prefixes[{{ $key }}]"
+                                       value="{{ old('prefixes.'.$key, $prefix) }}" maxlength="8"
+                                       class="k-input w-20 px-2 py-1 text-center uppercase">
+                                <span class="text-ink-400">-{{ now()->format('Y') }}-000001</span>
+                            </div>
                         </div>
                     @endforeach
                 </div>
-            </div>
+                @error('prefixes')
+                    <p class="k-error mt-2">{{ $message }}</p>
+                @enderror
+                <div class="flex justify-end pt-3">
+                    <button type="submit" class="k-btn-primary">
+                        <x-icon name="check" class="h-4 w-4"/> Enregistrer
+                    </button>
+                </div>
+            </form>
         </section>
 
         <section class="k-card">
@@ -229,9 +256,32 @@
                     </form>
                 </div>
             @endif
+
+            @if ($canEditRoles)
+                <div class="border-t border-ink-100 px-4 py-3">
+                    <form action="{{ route('settings.roles.store') }}" method="POST"
+                          class="flex flex-wrap items-end gap-2">
+                        @csrf
+                        <div>
+                            <label for="new-role-label" class="k-label">Ajouter un rôle</label>
+                            <input id="new-role-label" name="label" type="text" required maxlength="60"
+                                   placeholder="p. ex. Secrétariat médical" class="k-input">
+                            @error('label')
+                                <p class="k-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button type="submit" class="k-btn-secondary">
+                            <x-icon name="plus" class="h-4 w-4"/> Créer
+                        </button>
+                    </form>
+                    <p class="mt-1.5 text-xs text-ink-500">
+                        Le rôle est créé sans aucune permission ; accordez-les-lui dans la matrice ci-dessus.
+                    </p>
+                </div>
+            @endif
         </section>
 
-                <section class="k-card lg:col-span-2">
+        <section class="k-card lg:col-span-2">
             <div class="k-card-header"><h2 class="k-card-title">Services de l’établissement</h2></div>
             <div class="k-card-body grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($services as $service)
@@ -244,6 +294,40 @@
                                         :label="$service->is_active ? 'Actif' : 'Inactif'"/>
                     </div>
                 @endforeach
+            </div>
+
+            <div class="border-t border-ink-100 px-4 py-3">
+                <form action="{{ route('settings.services.store') }}" method="POST"
+                      class="flex flex-wrap items-end gap-2">
+                    @csrf
+                    <div>
+                        <label for="new-service-code" class="k-label">Code</label>
+                        <input id="new-service-code" name="code" type="text" required maxlength="10"
+                               placeholder="p. ex. ORL" class="k-input w-28 uppercase">
+                        @error('code')
+                            <p class="k-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="min-w-48 flex-1">
+                        <label for="new-service-name" class="k-label">Nom du service</label>
+                        <input id="new-service-name" name="name" type="text" required maxlength="100"
+                               placeholder="p. ex. Oto-rhino-laryngologie" class="k-input">
+                        @error('name')
+                            <p class="k-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="new-service-type" class="k-label">Type</label>
+                        <select id="new-service-type" name="type" class="k-select">
+                            <option value="clinical">Clinique</option>
+                            <option value="medico_technical">Médico-technique</option>
+                            <option value="administrative">Administratif</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="k-btn-secondary">
+                        <x-icon name="plus" class="h-4 w-4"/> Ajouter
+                    </button>
+                </form>
             </div>
         </section>
     </div>

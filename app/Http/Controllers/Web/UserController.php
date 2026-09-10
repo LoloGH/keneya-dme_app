@@ -44,7 +44,7 @@ class UserController extends Controller
         return view('users.index', [
             'users' => $users,
             'filters' => $request->only(['q', 'role']),
-            'roleLabels' => Rbac::roleLabels(),
+            'roleLabels' => Rbac::allRoleLabels(),
         ]);
     }
 
@@ -69,7 +69,7 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'service_id' => ['nullable', 'exists:services,id'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::in(array_keys(Rbac::roleLabels()))],
+            'role' => ['required', Rule::in(array_keys(Rbac::allRoleLabels()))],
         ], [], [
             'first_name' => 'prénom',
             'last_name' => 'nom',
@@ -120,7 +120,7 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'service_id' => ['nullable', 'exists:services,id'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::in(array_keys(Rbac::roleLabels()))],
+            'role' => ['required', Rule::in(array_keys(Rbac::allRoleLabels()))],
             'is_active' => ['nullable', 'boolean'],
         ], [], [
             'first_name' => 'prénom',
@@ -165,7 +165,7 @@ class UserController extends Controller
     {
         return [
             'roles' => Role::orderBy('name')->get(),
-            'roleLabels' => Rbac::roleLabels(),
+            'roleLabels' => Rbac::allRoleLabels(),
             'services' => Service::where('is_active', true)->orderBy('name')->get(),
         ];
     }

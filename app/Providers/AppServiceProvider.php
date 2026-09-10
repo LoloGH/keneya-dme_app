@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\Appointment;
+use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\Consultation;
 use App\Models\Diagnosis;
@@ -93,6 +94,44 @@ class AppServiceProvider extends ServiceProvider
         $this->configureModels();
         $this->configurePasswords();
         $this->configureRateLimiting();
+        $this->configureFacilitySettings();
+    }
+
+    /**
+     * Coordonnées de l'établissement et préfixes des identifiants métier :
+     * modifiables depuis l'écran Paramètres (App\Models\AppSetting), mais
+     * lus partout ailleurs via config('keneya.*') comme avant. La table
+     * peut ne pas exister encore (première installation, avant migrate) :
+     * dans ce cas, on garde silencieusement les valeurs par défaut du
+     * fichier de configuration.
+     */
+    private function configureFacilitySettings(): void
+    {
+        try {
+            if (! $this->app['db']->connection()->getSchemaBuilder()->hasTable('app_settings')) {
+                return;
+            }
+
+            $overrides = AppSetting::map();
+        } catch (\Throwable) {
+            return;
+        }
+
+        if ($overrides === []) {
+            return;
+        }
+
+        foreach (['name', 'address', 'phone', 'email'] as $field) {
+            if (! empty($overrides["facility.{$field}"])) {
+                config(["keneya.facility.{$field}" => $overrides["facility.{$field}"]]);
+            }
+        }
+
+        foreach (array_keys(config('keneya.identifiers.prefixes')) as $key) {
+            if (! empty($overrides["identifiers.prefixes.{$key}"])) {
+                config(["keneya.identifiers.prefixes.{$key}" => $overrides["identifiers.prefixes.{$key}"]]);
+            }
+        }
     }
 
     /**

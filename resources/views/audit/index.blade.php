@@ -80,7 +80,7 @@
                                 </td>
                                 <td class="font-medium text-ink-900">{{ $log->causer?->displayName() ?? 'Système' }}</td>
                                 <td class="text-xs">
-                                    {{ \App\Support\Rbac::roleLabels()[$log->causer_role] ?? ($log->causer_role ?: '—') }}
+                                    {{ \App\Support\Rbac::allRoleLabels()[$log->causer_role] ?? ($log->causer_role ?: '—') }}
                                 </td>
                                 <td>{{ $log->actionLabel() }}</td>
                                 <td class="font-mono text-xs">

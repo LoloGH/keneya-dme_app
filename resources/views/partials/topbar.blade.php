@@ -54,7 +54,7 @@
                 <span class="hidden text-left sm:block">
                     <span class="block text-sm font-medium text-ink-900">{{ auth()->user()->displayName() }}</span>
                     <span class="block text-xs text-ink-500">
-                        {{ \App\Support\Rbac::roleLabels()[auth()->user()->getRoleNames()->first()] ?? 'Utilisateur' }}
+                        {{ \App\Support\Rbac::allRoleLabels()[auth()->user()->getRoleNames()->first()] ?? 'Utilisateur' }}
                     </span>
                 </span>
             </button>

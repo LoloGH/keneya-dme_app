@@ -228,6 +228,43 @@ final class Rbac
     }
 
     /**
+     * Libellés mémorisés le temps de la requête, pour allRoleLabels().
+     *
+     * @var array<string, string>|null
+     */
+    private static ?array $allLabelsCache = null;
+
+    /**
+     * Libellés de TOUS les rôles, y compris ceux créés depuis l'écran
+     * Paramètres — contrairement à roleLabels(), qui ne connaît que les
+     * sept rôles d'origine.
+     *
+     * Mémorisé en mémoire pour la durée de la requête : cette méthode est
+     * appelée depuis des boucles d'affichage (journal d'audit, liste des
+     * utilisateurs) où une requête par appel serait un N+1.
+     *
+     * @return array<string, string>
+     */
+    public static function allRoleLabels(): array
+    {
+        if (self::$allLabelsCache !== null) {
+            return self::$allLabelsCache;
+        }
+
+        $builtin = self::roleLabels();
+
+        $custom = \Spatie\Permission\Models\Role::query()
+            ->whereNotIn('name', array_keys($builtin))
+            ->get(['name', 'label'])
+            ->mapWithKeys(static fn ($role) => [
+                $role->name => $role->label ?: \Illuminate\Support\Str::headline($role->name),
+            ])
+            ->all();
+
+        return self::$allLabelsCache = $builtin + $custom;
+    }
+
+    /**
      * État courant de la matrice, tel qu'il est enregistré en base.
      *
      * C'est cette méthode que doivent consulter l'écran Paramètres et les

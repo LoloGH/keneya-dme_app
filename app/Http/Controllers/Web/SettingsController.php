@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\Service;
 use App\Models\SmsTemplate;
@@ -40,7 +41,7 @@ class SettingsController extends Controller
         if (! $user->can('settings.manage')) {
             return view('settings.account', [
                 'user' => $user->load(['service', 'roles']),
-                'roleLabels' => Rbac::roleLabels(),
+                'roleLabels' => Rbac::allRoleLabels(),
             ]);
         }
 
@@ -55,7 +56,7 @@ class SettingsController extends Controller
             'smsRetry' => config('sms.retry'),
             'services' => Service::orderBy('name')->get(),
             'roles' => Role::withCount('users')->orderBy('name')->get(),
-            'roleLabels' => Rbac::roleLabels(),
+            'roleLabels' => Rbac::allRoleLabels(),
             'permissionGroups' => Rbac::permissionGroups(),
             // L'état réel, tel qu'il est en base : depuis que la matrice est
             // modifiable, le tableau d'amorçage de Rbac ne la décrit plus.
@@ -101,6 +102,81 @@ class SettingsController extends Controller
         );
 
         return back()->with('success', 'Mot de passe mis à jour.');
+    }
+
+    /**
+     * Coordonnées de l'établissement, affichées dans l'interface et les
+     * documents PDF. Réservé à settings.manage.
+     */
+    public function updateFacility(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->can('settings.manage'), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'address' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:30'],
+            'email' => ['required', 'email', 'max:150'],
+        ], [], [
+            'name' => 'nom',
+            'address' => 'adresse',
+            'phone' => 'téléphone',
+            'email' => 'adresse e-mail',
+        ]);
+
+        foreach ($data as $field => $value) {
+            AppSetting::put("facility.{$field}", $value);
+        }
+
+        AuditLog::record(
+            action: 'facility_settings_updated',
+            description: 'A modifié les coordonnées de l’établissement',
+        );
+
+        return back()->with('success', 'Coordonnées de l’établissement mises à jour.');
+    }
+
+    /**
+     * Préfixes des identifiants métier (PAT, CONS, ORD…). Réservé à
+     * settings.manage.
+     *
+     * Changer un préfixe n'affecte que les identifiants générés après le
+     * changement : ceux déjà attribués restent inchangés, et la séquence
+     * du nouveau préfixe repart de un pour l'année en cours. C'est
+     * signalé dans l'écran, pas seulement ici.
+     */
+    public function updateIdentifiers(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->can('settings.manage'), 403);
+
+        $keys = array_keys(config('keneya.identifiers.prefixes'));
+
+        $data = $request->validate([
+            'prefixes' => ['required', 'array'],
+            'prefixes.*' => ['required', 'string', 'max:8', 'regex:/^[A-Z0-9]+$/'],
+        ], [
+            'prefixes.*.regex' => 'Le préfixe :attribute ne peut contenir que des lettres majuscules et des chiffres.',
+        ]);
+
+        $submitted = array_intersect_key($data['prefixes'], array_flip($keys));
+
+        if (count(array_unique($submitted)) !== count($submitted)) {
+            return back()->withErrors([
+                'prefixes' => 'Deux types de document ne peuvent pas partager le même préfixe.',
+            ])->withInput();
+        }
+
+        foreach ($submitted as $key => $prefix) {
+            AppSetting::put("identifiers.prefixes.{$key}", $prefix);
+        }
+
+        AuditLog::record(
+            action: 'identifier_prefixes_updated',
+            properties: $submitted,
+            description: 'A modifié les préfixes des identifiants métier',
+        );
+
+        return back()->with('success', 'Préfixes des identifiants mis à jour.');
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Support\Rbac;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -33,6 +34,42 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class RolePermissionController extends Controller
 {
+    /**
+     * Nouveau rôle, sans permission au départ : l'administrateur les
+     * accorde ensuite depuis la matrice, ligne par ligne. Le nom
+     * technique (utilisé par hasRole()) est dérivé du libellé et n'est
+     * plus modifiable une fois créé — le renommer reviendrait à changer
+     * silencieusement l'identité d'un rôle déjà attribué.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->can('roles.manage'), 403);
+
+        $data = $request->validate([
+            'label' => ['required', 'string', 'max:60'],
+        ], [], ['label' => 'nom du rôle']);
+
+        $name = Str::slug($data['label'], '_');
+
+        if ($name === '') {
+            return back()->withErrors(['label' => 'Ce nom ne produit aucun identifiant valide.'])->withInput();
+        }
+
+        if (Role::where('name', $name)->exists()) {
+            return back()->withErrors(['label' => 'Un rôle équivalent existe déjà.'])->withInput();
+        }
+
+        $role = Role::create(['name' => $name, 'guard_name' => 'web', 'label' => $data['label']]);
+
+        AuditLog::record(
+            action: 'role_created',
+            subject: $role,
+            description: 'A créé le rôle '.$data['label'],
+        );
+
+        return back()->with('success', 'Rôle « '.$data['label'].' » créé. Accordez-lui ses permissions ci-dessous.');
+    }
+
     public function update(Request $request): RedirectResponse
     {
         abort_unless($request->user()->can('roles.manage'), 403);

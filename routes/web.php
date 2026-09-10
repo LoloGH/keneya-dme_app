@@ -19,6 +19,7 @@ use App\Http\Controllers\Web\PatientRecordController;
 use App\Http\Controllers\Web\PrescriptionController;
 use App\Http\Controllers\Web\SearchController;
 use App\Http\Controllers\Web\RolePermissionController;
+use App\Http\Controllers\Web\ServiceController;
 use App\Http\Controllers\Web\SettingsController;
 use App\Http\Controllers\Web\SmsController;
 use App\Http\Controllers\Web\UserController;
@@ -218,9 +219,19 @@ Route::middleware('auth')->group(function (): void {
         ->name('settings.password.update');
     Route::patch('/parametres/garde', [SettingsController::class, 'toggleDuty'])
         ->name('settings.duty.toggle');
+    // Établissement et identifiants : réservés à settings.manage, vérifié dans le contrôleur.
+    Route::put('/parametres/etablissement', [SettingsController::class, 'updateFacility'])
+        ->name('settings.facility.update');
+    Route::put('/parametres/identifiants', [SettingsController::class, 'updateIdentifiers'])
+        ->name('settings.identifiers.update');
     // Matrice des rôles : réservée à roles.manage, vérifié dans le contrôleur.
+    Route::post('/parametres/roles', [RolePermissionController::class, 'store'])
+        ->name('settings.roles.store');
     Route::put('/parametres/roles', [RolePermissionController::class, 'update'])
         ->name('settings.roles.update');
     Route::post('/parametres/roles/reinitialiser', [RolePermissionController::class, 'reset'])
         ->name('settings.roles.reset');
+    // Services : réservés à settings.manage, vérifié dans le contrôleur.
+    Route::post('/parametres/services', [ServiceController::class, 'store'])
+        ->name('settings.services.store');
 });
