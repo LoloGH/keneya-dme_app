@@ -273,7 +273,7 @@ class PatientController extends Controller
                     : collect(),
                 'openHospitalizations' => $patient->hospitalizations()
                     ->whereNull('discharged_at')
-                    ->get(['id', 'reference']),
+                    ->get(['id', 'hospitalization_number']),
             ],
             'rendez-vous' => [
                 'appointments' => $patient->appointments()

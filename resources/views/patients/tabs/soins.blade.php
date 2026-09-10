@@ -194,7 +194,7 @@
                                         @foreach ($tabData['openHospitalizations'] as $hosp)
                                             <option value="{{ $hosp->id }}"
                                                 @selected(old('hospitalization_id') == $hosp->id)>
-                                                {{ $hosp->reference }}
+                                                {{ $hosp->hospitalization_number }}
                                             </option>
                                         @endforeach
                                     </select>
